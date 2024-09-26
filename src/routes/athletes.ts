@@ -1,3 +1,4 @@
+import createAthlete from "@/models/athlete/mutations/createAthlete";
 import { Hono } from "hono";
 
 const athletesRouter = new Hono();

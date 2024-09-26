@@ -25,9 +25,20 @@ model Metric {
   id          String       @id @default(uuid())
   athleteId  String
   athlete     Athlete    @relation(fields:[athleteId], references:[id])
-  metricType  String
+  metricType  MetricType
   value       Float
-  unit        String
+  unit        Unit
   timestamp  DateTime
 }
 
+enum MetricType {
+  SPEED
+  STRENGTH
+  STAMINA
+}
+
+enum Unit {
+  KILOGRAMS
+  MPS
+  KILOMETERS
+}

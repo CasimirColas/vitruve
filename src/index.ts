@@ -21,3 +21,4 @@ serve({
   fetch: app.fetch,
   port,
 });
+export { prisma as db };
