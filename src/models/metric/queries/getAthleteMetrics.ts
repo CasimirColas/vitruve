@@ -5,10 +5,12 @@ import { z } from "zod";
 // The id for the athlete is provided through the request params
 const getAthleteMetricsSchema = z.object({
   metricTypes: z.array(z.nativeEnum(MetricType)),
-  dateRange: z.object({
-    start: z.date(),
-    end: z.date(),
-  }),
+  dateRange: z
+    .object({
+      start: z.date(),
+      end: z.date(),
+    })
+    .optional(),
 });
 
 type DateRange = {
@@ -18,7 +20,7 @@ type DateRange = {
 interface GetAthleteMetricsRequest {
   id: string;
   metricTypes: MetricType[];
-  dateRange: DateRange;
+  dateRange?: DateRange;
 }
 
 /**
@@ -33,7 +35,9 @@ async function getAthleteMetrics(req: GetAthleteMetricsRequest) {
     where: {
       athleteId: req.id,
       metricType: { in: req.metricTypes },
-      timestamp: { gte: req.dateRange.start, lte: req.dateRange.end },
+      timestamp: req.dateRange
+        ? { gte: req.dateRange.start, lte: req.dateRange.end }
+        : undefined,
     },
   });
   return metrics;

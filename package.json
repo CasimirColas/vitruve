@@ -1,7 +1,11 @@
 {
   "name": "vitruve",
+  "type": "module",
   "scripts": {
     "dev": "tsx watch src/index.ts"
+  },
+  "prisma": {
+    "seed": "npx ts-node --esm prisma/seed.ts"
   },
   "dependencies": {
     "@hono/node-server": "^1.13.1",
@@ -12,6 +16,7 @@
     "zod": "^3.23.8"
   },
   "devDependencies": {
+    "@faker-js/faker": "^9.0.3",
     "@types/node": "^20.16.6",
     "prisma": "^5.20.0",
     "ts-node": "^10.9.2",

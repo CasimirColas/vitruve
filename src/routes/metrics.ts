@@ -10,9 +10,9 @@ const metricsRouter = new Hono();
 metricsRouter.get(
   "/leaderboard",
   zValidator("json", getLeaderboardSchema),
-  (c) => {
+  async (c) => {
     const validated = c.req.valid("json");
-    const leaderboard = getLeaderboard(validated);
+    const leaderboard = await getLeaderboard(validated);
     return c.json(leaderboard);
   }
 );
