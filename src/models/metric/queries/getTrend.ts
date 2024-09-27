@@ -1,17 +1,35 @@
 import { db } from "@/index";
 import { MetricType } from "@prisma/client";
 import { differenceInDays } from "date-fns";
+import { z } from "zod";
 
+// The id for the athlete will be provided through the request params
+const getTrendSchema = z.object({
+  metricType: z.nativeEnum(MetricType),
+  dateRange: z.object({
+    start: z.date(),
+    end: z.date(),
+  }),
+});
+
+type DateRange = {
+  start: Date;
+  end: Date;
+};
 interface Trend {
   athleteId: string;
   metricType: MetricType;
-  dateRange: {
-    start: Date;
-    end: Date;
-  };
+  dateRange: DateRange;
 }
 
-export default async function getTrend(req: Trend) {
+/**
+ * Retrieve the trend of an athlete’s performance metrics over time
+ * @param {string} athleteId The ID of the athlete to retrieve the trend for
+ * @param {MetricType} metricType The type of metric to retrieve the trend for
+ * @param {DateRange} dateRange The date range to retrieve the trend for
+ * @returns {Object} The trend of the athlete's metric
+ */
+async function getTrend(req: Trend) {
   const metrics = await db.metric.findMany({
     where: {
       athleteId: req.athleteId,
@@ -71,3 +89,5 @@ export default async function getTrend(req: Trend) {
     trend: linearRegression(formatedData),
   };
 }
+
+export { getTrend, getTrendSchema };

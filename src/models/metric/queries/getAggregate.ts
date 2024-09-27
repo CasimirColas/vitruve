@@ -1,23 +1,59 @@
 import { db } from "@/index";
-import type { MetricType } from "@prisma/client";
+import { MetricType } from "@prisma/client";
+import { z } from "zod";
+
+enum AggregateOperations {
+  sum,
+  avg,
+  min,
+  max,
+  stddev,
+}
+
+// The id for the athlete will be provided through the request params
+const getAggregateSchema = z.object({
+  metricType: z.nativeEnum(MetricType),
+  operations: z.array(z.nativeEnum(AggregateOperations)),
+  dateRange: z
+    .object({
+      start: z.date(),
+      end: z.date(),
+    })
+    .optional(),
+});
 
 interface MetricAggregate {
   id: string;
   metricType: MetricType;
-  opperations: ("sum" | "avg" | "min" | "max" | "stddev")[];
+  operations: AggregateOperations[];
+  dateRange?: {
+    start: Date;
+    end: Date;
+  };
 }
 
-export default async function getAggregate(req: MetricAggregate) {
-  function checkOp(op: string) {
-    return ["sum", "avg", "min", "max"].includes(op);
+/**
+ * Retrieve aggregate statistics for an athlete’s performance metrics
+ * @param {string} id The ID of the athlete to retrieve statistics for
+ * @param {string} metricType The type of metric to retrieve statistics for
+ * @param {string} operations The operation to perform on the metric values (average, max, min, total, stddev)
+ */
+async function getAggregate(req: MetricAggregate) {
+  function checkOp(op: AggregateOperations) {
+    return req.operations.includes(op);
   }
 
   const aggregate = await db.metric.aggregate({
-    where: { athleteId: req.id },
-    ...(checkOp("avg") && { _avg: { value: true } }),
-    ...(checkOp("sum") && { _count: { value: true } }),
-    ...(checkOp("min") && { _min: { value: true } }),
-    ...(checkOp("max") && { _max: { value: true } }),
+    where: {
+      athleteId: req.id,
+      timestamp: req.dateRange
+        ? { gte: req.dateRange.start, lte: req.dateRange.end }
+        : undefined,
+    },
+    ...(checkOp(AggregateOperations.avg) && { _avg: { value: true } }),
+    ...(checkOp(AggregateOperations.sum) && { _count: { value: true } }),
+    ...(checkOp(AggregateOperations.min) && { _min: { value: true } }),
+    ...(checkOp(AggregateOperations.max) && { _max: { value: true } }),
   });
 
   const res = {
@@ -27,7 +63,7 @@ export default async function getAggregate(req: MetricAggregate) {
     max: aggregate._max,
   };
 
-  if (req.opperations.includes("stddev")) {
+  if (req.operations.includes(AggregateOperations.stddev) && req.dateRange) {
     const metrics = await db.metric.findMany({ where: { athleteId: req.id } });
     const avg =
       metrics.reduce((acc, curr) => acc + curr.value, 0) / metrics.length;
@@ -39,3 +75,10 @@ export default async function getAggregate(req: MetricAggregate) {
   }
   return res;
 }
+
+export {
+  getAggregate,
+  getAggregateSchema,
+  MetricAggregate,
+  AggregateOperations,
+};

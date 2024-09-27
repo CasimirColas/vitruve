@@ -1,101 +1,145 @@
-import createAthlete from "@/models/athlete/mutations/createAthlete";
 import { Hono } from "hono";
+import { HTTPException } from "hono/http-exception";
+import { zValidator } from "@hono/zod-validator";
+import {
+  createAthleteSchema,
+  createAthlete,
+} from "@/models/athlete/mutations/createAthlete";
+import {
+  createMetric,
+  createMetricSchema,
+} from "@/models/metric/mutations/createMetric";
+import getAthletes from "@/models/athlete/queries/getAthletes";
+import getAthlete from "@/models/athlete/queries/getAthlete";
+import { z } from "zod";
+import {
+  getAthleteMetrics,
+  getAthleteMetricsSchema,
+} from "@/models/metric/queries/getAthleteMetrics";
+import {
+  AggregateOperations,
+  getAggregateSchema,
+  getAggregate,
+} from "@/models/metric/queries/getAggregate";
+import { getTrend, getTrendSchema } from "@/models/metric/queries/getTrend";
+import { updateAthlete } from "@/models/athlete/mutations/updateAthlete";
+import deleteAthlete from "@/models/athlete/mutations/deleteAthlete";
 
 const athletesRouter = new Hono();
 
 // POST
 
-/**
- * Create a new athlete
- * */
-athletesRouter.post("/", (c) => {
-  return c.json({ message: "Hello new Athlete!" });
+athletesRouter.post("/", zValidator("json", createAthleteSchema), (c) => {
+  const validated = c.req.valid("json");
+  const athlete = createAthlete(validated);
+  return c.json(athlete);
 });
 
-/**
- * Add a new performance metric for a specific
- * */
-athletesRouter.post("/:id/metrics", (c) => {
-  return c.json({
-    message: `Hello Athlete ${c.req.param("id")} with new Metric!`,
-  });
-});
+athletesRouter.post(
+  "/:id/metrics",
+  zValidator("param", z.object({ id: z.string().uuid() })),
+  zValidator("json", createMetricSchema),
+  (c) => {
+    const validated = c.req.valid("json");
+    const metric = createMetric({
+      ...validated,
+      athleteId: c.req.valid("param").id,
+    });
+    return c.json(metric);
+  }
+);
 
 // GET
 
-/**
- * Retrieve a list of all athletes
- * */
 athletesRouter.get("/", (c) => {
-  return c.json({ message: "Hello Athletes!" });
+  const athletes = getAthletes();
+  return c.json(athletes);
 });
 
-/**
- * Get details and performance metrics for a specific athlete
- * @param {string} id The ID of the athlete to retrieve
- */
-athletesRouter.get("/:id", (c) => {
-  return c.json({ message: `Hello Athlete ${c.req.param("id")}!` });
-});
+athletesRouter.get(
+  "/:id",
+  zValidator("param", z.object({ id: z.string().uuid() })),
+  (c) => {
+    const athlete = getAthlete(c.req.valid("param").id);
+    return c.json(athlete);
+  }
+);
 
-/**
- * Retrieve the performance metrics for a specific athlete, with the option to filter by metricType and a date range
- * @param {string} id The ID of the athlete to retrieve metrics for
- * @param {string} metricType The type of metric to retrieve
- * @param {string} dateRange The date range to retrieve metrics for
- */
-athletesRouter.get("/:id/metrics", (c) => {
-  return c.json({ message: `Hello Athlete ${c.req.param("id")} Metrics!` });
-});
+athletesRouter.get(
+  "/:id/metrics",
+  zValidator("param", z.object({ id: z.string().uuid() })),
+  zValidator("json", getAthleteMetricsSchema),
+  (c) => {
+    const validated = c.req.valid("json");
+    const metrics = getAthleteMetrics({
+      ...validated,
+      id: c.req.valid("param").id,
+    });
+    return c.json(metrics);
+  }
+);
 
-/**
- * Retrieve aggregate statistics for an athlete’s performance metrics
- * @param {string} id The ID of the athlete to retrieve statistics for
- * @param {string} metricType The type of metric to retrieve statistics for
- * @param {string} operation The operation to perform on the metric values (average, max, min, total, stddev)
- */
-athletesRouter.get("/:id/metrics/aggregate", (c) => {
-  const { metricType, operation } = c.req.query();
-  return c.json({
-    message: `Hello Athlete ${c.req.param("id")}!`,
-    operation: operation,
-    metricType: metricType,
-  });
-});
+athletesRouter.get(
+  "/:id/metrics/aggregate",
+  zValidator("param", z.object({ id: z.string().uuid() })),
+  zValidator("json", getAggregateSchema),
+  (c) => {
+    const { metricType, operations, dateRange } = c.req.valid("json");
+    // If standard deviation is requested, a date range is required
+    if (!dateRange && operations.includes(AggregateOperations.stddev)) {
+      throw new HTTPException(422, {
+        message: "Date range is required for standard deviation calculations",
+      });
+    }
+    const aggregate = getAggregate({
+      id: c.req.valid("param").id,
+      metricType: metricType,
+      operations: operations,
+      dateRange: dateRange,
+    });
+    return c.json(aggregate);
+  }
+);
 
-/**
- * Retrieve the trend of an athlete’s performance metrics over time
- * @param {string} id The ID of the athlete to retrieve the trend for
- * @param {string} metricType The type of metric to retrieve the trend for
- * @param {string} dateRange The date range to retrieve the trend for
- */
-athletesRouter.get("/:id/metrics/trends", (c) => {
-  const { metricType, dateRange } = c.req.query();
-  return c.json({
-    message: `Hello Athlete ${c.req.param("id")}!`,
-    metricType: metricType,
-    dateRange: dateRange,
-  });
-});
+athletesRouter.get(
+  "/:id/metrics/trends",
+  zValidator("param", z.object({ id: z.string().uuid() })),
+  zValidator("json", getTrendSchema),
+  (c) => {
+    const validated = c.req.valid("json");
+    const trend = getTrend({
+      ...validated,
+      athleteId: c.req.valid("param").id,
+    });
+    return c.json(trend);
+  }
+);
 
 // PUT
 
-/**
- * Update an athlete’s details
- * @param {string} id The ID of the athlete to update
- */
-athletesRouter.put("/:id", (c) => {
-  return c.json({ message: `Hello updated Athlete ${c.req.param("id")}!` });
-});
+athletesRouter.put(
+  "/:id",
+  zValidator("param", z.object({ id: z.string().uuid() })),
+  zValidator("json", createAthleteSchema),
+  (c) => {
+    const validated = c.req.valid("json");
+    const athlete = updateAthlete({
+      ...validated,
+      id: c.req.valid("param").id,
+    });
+    return c.json(athlete);
+  }
+);
 
 // DELETE
 
-/**
- * Delete an athlete
- * @param {string} id The ID of the athlete to delete
- */
-athletesRouter.delete("/:id", (c) => {
-  return c.json({ message: `Hello deleted Athlete ${c.req.param("id")}!` });
-});
+athletesRouter.delete(
+  "/:id",
+  zValidator("param", z.object({ id: z.string().uuid() })),
+  (c) => {
+    const athlete = deleteAthlete(c.req.valid("param").id);
+    return c.json(athlete);
+  }
+);
 
 export default athletesRouter;
