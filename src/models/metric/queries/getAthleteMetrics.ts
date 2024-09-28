@@ -2,25 +2,20 @@ import { db } from "@/index";
 import { MetricType } from "@prisma/client";
 import { z } from "zod";
 
-// The id for the athlete is provided through the request params
 const getAthleteMetricsSchema = z.object({
   metricTypes: z.array(z.nativeEnum(MetricType)),
-  dateRange: z
-    .object({
-      start: z.date(),
-      end: z.date(),
-    })
-    .optional(),
+  start: z.string().datetime().optional(),
+  end: z.string().datetime().optional(),
 });
 
 type DateRange = {
-  start: Date;
-  end: Date;
+  start?: Date;
+  end?: Date;
 };
 interface GetAthleteMetricsRequest {
   id: string;
   metricTypes: MetricType[];
-  dateRange?: DateRange;
+  dateRange: DateRange;
 }
 
 /**
@@ -35,9 +30,7 @@ async function getAthleteMetrics(req: GetAthleteMetricsRequest) {
     where: {
       athleteId: req.id,
       metricType: { in: req.metricTypes },
-      timestamp: req.dateRange
-        ? { gte: req.dateRange.start, lte: req.dateRange.end }
-        : undefined,
+      timestamp: { gte: req.dateRange.start, lte: req.dateRange.end },
     },
   });
   return metrics;

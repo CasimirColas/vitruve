@@ -68,12 +68,16 @@ athletesRouter.get(
 athletesRouter.get(
   "/:id/metrics",
   zValidator("param", z.object({ id: z.string().uuid() })),
-  zValidator("json", getAthleteMetricsSchema),
+  zValidator("query", getAthleteMetricsSchema),
   async (c) => {
-    const validated = c.req.valid("json");
+    const { metricTypes, start, end } = c.req.valid("query");
     const metrics = await getAthleteMetrics({
-      ...validated,
       id: c.req.valid("param").id,
+      metricTypes: metricTypes,
+      dateRange: {
+        start: start ? new Date(start) : undefined,
+        end: end ? new Date(end) : undefined,
+      },
     });
     return c.json(metrics);
   }
@@ -82,20 +86,17 @@ athletesRouter.get(
 athletesRouter.get(
   "/:id/metrics/aggregate",
   zValidator("param", z.object({ id: z.string().uuid() })),
-  zValidator("json", getAggregateSchema),
+  zValidator("query", getAggregateSchema),
   async (c) => {
-    const { metricType, operations, dateRange } = c.req.valid("json");
-    // If standard deviation is requested, a date range is required
-    if (!dateRange && operations.includes(AggregateOperations.stddev)) {
-      throw new HTTPException(422, {
-        message: "Date range is required for standard deviation calculations",
-      });
-    }
+    const { metricType, operations, start, end } = c.req.valid("query");
     const aggregate = await getAggregate({
       id: c.req.valid("param").id,
       metricType: metricType,
       operations: operations,
-      dateRange: dateRange,
+      dateRange: {
+        start: new Date(start),
+        end: new Date(end),
+      },
     });
     return c.json(aggregate);
   }
@@ -104,11 +105,15 @@ athletesRouter.get(
 athletesRouter.get(
   "/:id/metrics/trends",
   zValidator("param", z.object({ id: z.string().uuid() })),
-  zValidator("json", getTrendSchema),
+  zValidator("query", getTrendSchema),
   async (c) => {
-    const validated = c.req.valid("json");
+    const { metricType, start, end } = c.req.valid("query");
     const trend = await getTrend({
-      ...validated,
+      metricType: metricType,
+      dateRange: {
+        start: new Date(start),
+        end: new Date(end),
+      },
       athleteId: c.req.valid("param").id,
     });
     return c.json(trend);

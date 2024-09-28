@@ -10,23 +10,18 @@ enum AggregateOperations {
   stddev,
 }
 
-// The id for the athlete will be provided through the request params
 const getAggregateSchema = z.object({
   metricType: z.nativeEnum(MetricType),
   operations: z.array(z.nativeEnum(AggregateOperations)),
-  dateRange: z
-    .object({
-      start: z.date(),
-      end: z.date(),
-    })
-    .optional(),
+  start: z.string().datetime(),
+  end: z.string().datetime(),
 });
 
 interface MetricAggregate {
   id: string;
   metricType: MetricType;
   operations: AggregateOperations[];
-  dateRange?: {
+  dateRange: {
     start: Date;
     end: Date;
   };
@@ -46,9 +41,7 @@ async function getAggregate(req: MetricAggregate) {
   const aggregate = await db.metric.aggregate({
     where: {
       athleteId: req.id,
-      timestamp: req.dateRange
-        ? { gte: req.dateRange.start, lte: req.dateRange.end }
-        : undefined,
+      timestamp: { gte: req.dateRange.start, lte: req.dateRange.end },
     },
     ...(checkOp(AggregateOperations.avg) && { _avg: { value: true } }),
     ...(checkOp(AggregateOperations.sum) && { _count: { value: true } }),

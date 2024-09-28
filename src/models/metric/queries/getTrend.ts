@@ -3,13 +3,10 @@ import { MetricType } from "@prisma/client";
 import { differenceInDays } from "date-fns";
 import { z } from "zod";
 
-// The id for the athlete will be provided through the request params
 const getTrendSchema = z.object({
   metricType: z.nativeEnum(MetricType),
-  dateRange: z.object({
-    start: z.date(),
-    end: z.date(),
-  }),
+  start: z.string().datetime(),
+  end: z.string().datetime(),
 });
 
 type DateRange = {
