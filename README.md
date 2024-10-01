@@ -75,7 +75,3 @@ The project provides the following endpoints:
   - /athletes/:id
 - DELETE:
   - /athletes/:id
-
-## Shortcommings
-
-Unfortunately I couldn't make the project work in Docker

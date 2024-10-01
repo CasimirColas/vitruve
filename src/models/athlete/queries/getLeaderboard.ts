@@ -1,6 +1,6 @@
 import { db } from "@/index";
-import { Athlete, MetricType } from "@prisma/client";
-import { getLeaderboardRaw } from "@prisma/client/sql";
+import { Athlete, MetricType, Prisma } from "@prisma/client";
+//import { getLeaderboardRaw } from "@prisma/client/sql";
 import { z } from "zod";
 
 const getLeaderboardSchema = z.object({
@@ -19,8 +19,25 @@ interface Leaderboard {
  */
 async function getLeaderboard(req: Leaderboard) {
   const { metricType, limit } = req;
-  const leaderboard = await db.$queryRawTyped(
-    getLeaderboardRaw(metricType, limit ? limit : 10)
+  // const leaderboard = await db.$queryRawTyped(
+  //   getLeaderboardRaw(metricType, limit ? limit : 10)
+  // );
+  const leaderboard = await db.$queryRaw(
+    Prisma.sql`SELECT 
+      a.id,
+      a.name,
+      AVG(m.value) as average_value
+    FROM 
+      "Athlete" a
+    JOIN 
+      "Metric" m ON a.id = m."athleteId"
+    WHERE 
+      m."metricType"::text = ${metricType}
+    GROUP BY 
+      a.id, a.name
+    ORDER BY 
+      average_value DESC
+    LIMIT ${limit ? limit : 10}`
   );
   return leaderboard;
 }

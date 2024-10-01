@@ -13,7 +13,9 @@ metricsRouter.get(
   async (c) => {
     const validated = c.req.valid("query");
     const leaderboard = await getLeaderboard(validated);
-    return c.json(leaderboard);
+    return c.json(
+      leaderboard as { id: string; name: string; average_value: number }[]
+    );
   }
 );
 
