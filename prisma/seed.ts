@@ -15,6 +15,10 @@ type TestMetric = {
 
 function generateMetrics() {
   const today = new Date();
+  // Add some randomness to the values
+  function distinctValue(v: number) {
+    return Math.round(v * (1 + Math.random() * 0.2));
+  }
   const stamina: TestMetric[] = Array.from({ length: 10 }, (_, i) => {
     return {
       value: faker.number.float({ min: 0, max: 10, fractionDigits: 2 }),
@@ -25,43 +29,43 @@ function generateMetrics() {
   });
   const strength: TestMetric[] = [
     {
-      value: 60,
+      value: distinctValue(60),
       unit: Unit.KILOGRAMS,
       metricType: MetricType.STRENGTH,
       timestamp: today,
     },
     {
-      value: 80,
+      value: distinctValue(80),
       unit: Unit.KILOGRAMS,
       metricType: MetricType.STRENGTH,
       timestamp: subDays(today, 1),
     },
     {
-      value: 70,
+      value: distinctValue(70),
       unit: Unit.KILOGRAMS,
       metricType: MetricType.STRENGTH,
       timestamp: subDays(today, 2),
     },
     {
-      value: 80,
+      value: distinctValue(80),
       unit: Unit.KILOGRAMS,
       metricType: MetricType.STRENGTH,
       timestamp: subDays(today, 4),
     },
     {
-      value: 70,
+      value: distinctValue(70),
       unit: Unit.KILOGRAMS,
       metricType: MetricType.STRENGTH,
       timestamp: subDays(today, 5),
     },
     {
-      value: 60,
+      value: distinctValue(60),
       unit: Unit.KILOGRAMS,
       metricType: MetricType.STRENGTH,
       timestamp: subDays(today, 6),
     },
     {
-      value: 50,
+      value: distinctValue(50),
       unit: Unit.KILOGRAMS,
       metricType: MetricType.STRENGTH,
       timestamp: subDays(today, 8),
@@ -69,19 +73,19 @@ function generateMetrics() {
   ];
   const speed: TestMetric[] = [
     {
-      value: 15,
+      value: distinctValue(15),
       unit: Unit.MPS,
       metricType: MetricType.SPEED,
       timestamp: today,
     },
     {
-      value: 12,
+      value: distinctValue(12),
       unit: Unit.MPS,
       metricType: MetricType.SPEED,
       timestamp: subDays(today, 4),
     },
     {
-      value: 10,
+      value: distinctValue(10),
       unit: Unit.MPS,
       metricType: MetricType.SPEED,
       timestamp: subDays(today, 8),
