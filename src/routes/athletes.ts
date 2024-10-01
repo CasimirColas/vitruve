@@ -25,16 +25,22 @@ import {
   UpdateAthleteSchema,
 } from "@/models/athlete/mutations/updateAthlete";
 import deleteAthlete from "@/models/athlete/mutations/deleteAthlete";
+import { isLoggedIn } from "@/routes/auth";
 
 const athletesRouter = new Hono();
 
 // POST
 
-athletesRouter.post("/", zValidator("json", createAthleteSchema), async (c) => {
-  const validated = c.req.valid("json");
-  const athlete = await createAthlete(validated);
-  return c.json(athlete);
-});
+athletesRouter.post(
+  "/",
+  isLoggedIn,
+  zValidator("json", createAthleteSchema),
+  async (c) => {
+    const validated = c.req.valid("json");
+    const athlete = await createAthlete(validated);
+    return c.json(athlete);
+  }
+);
 
 athletesRouter.post(
   "/:id/metrics",
@@ -136,6 +142,7 @@ athletesRouter.get(
 
 athletesRouter.put(
   "/:id",
+  isLoggedIn,
   zValidator("param", z.object({ id: z.string().uuid() })),
   zValidator("json", UpdateAthleteSchema),
   async (c) => {
@@ -152,6 +159,7 @@ athletesRouter.put(
 
 athletesRouter.delete(
   "/:id",
+  isLoggedIn,
   zValidator("param", z.object({ id: z.string().uuid() })),
   async (c) => {
     const athlete = await deleteAthlete(c.req.valid("param").id);
