@@ -1,5 +1,4 @@
 import { Hono } from "hono";
-import { HTTPException } from "hono/http-exception";
 import { zValidator } from "@hono/zod-validator";
 import {
   createAthleteSchema,
@@ -17,12 +16,14 @@ import {
   getAthleteMetricsSchema,
 } from "@/models/metric/queries/getAthleteMetrics";
 import {
-  AggregateOperations,
   getAggregateSchema,
   getAggregate,
 } from "@/models/metric/queries/getAggregate";
 import { getTrend, getTrendSchema } from "@/models/metric/queries/getTrend";
-import { updateAthlete } from "@/models/athlete/mutations/updateAthlete";
+import {
+  updateAthlete,
+  UpdateAthleteSchema,
+} from "@/models/athlete/mutations/updateAthlete";
 import deleteAthlete from "@/models/athlete/mutations/deleteAthlete";
 
 const athletesRouter = new Hono();
@@ -40,9 +41,12 @@ athletesRouter.post(
   zValidator("param", z.object({ id: z.string().uuid() })),
   zValidator("json", createMetricSchema),
   async (c) => {
-    const validated = c.req.valid("json");
+    const { metricType, unit, timestamp, value } = c.req.valid("json");
     const metric = await createMetric({
-      ...validated,
+      metricType,
+      unit,
+      timestamp: new Date(timestamp),
+      value,
       athleteId: c.req.valid("param").id,
     });
     return c.json(metric);
@@ -70,7 +74,11 @@ athletesRouter.get(
   zValidator("param", z.object({ id: z.string().uuid() })),
   zValidator("query", getAthleteMetricsSchema),
   async (c) => {
-    const { metricTypes, start, end } = c.req.valid("query");
+    let { metricTypes, start, end } = c.req.valid("query");
+    // If only one metricType is given in the query
+    if (typeof metricTypes === "string") {
+      metricTypes = [metricTypes];
+    }
     const metrics = await getAthleteMetrics({
       id: c.req.valid("param").id,
       metricTypes: metricTypes,
@@ -88,14 +96,18 @@ athletesRouter.get(
   zValidator("param", z.object({ id: z.string().uuid() })),
   zValidator("query", getAggregateSchema),
   async (c) => {
-    const { metricType, operations, start, end } = c.req.valid("query");
+    let { metricType, operations, start, end } = c.req.valid("query");
+    // If only one operation is given in the query
+    if (typeof operations === "string") {
+      operations = [operations];
+    }
     const aggregate = await getAggregate({
       id: c.req.valid("param").id,
       metricType: metricType,
       operations: operations,
       dateRange: {
-        start: new Date(start),
-        end: new Date(end),
+        start: start ? new Date(start) : undefined,
+        end: end ? new Date(end) : undefined,
       },
     });
     return c.json(aggregate);
@@ -125,7 +137,7 @@ athletesRouter.get(
 athletesRouter.put(
   "/:id",
   zValidator("param", z.object({ id: z.string().uuid() })),
-  zValidator("json", createAthleteSchema),
+  zValidator("json", UpdateAthleteSchema),
   async (c) => {
     const validated = c.req.valid("json");
     const athlete = await updateAthlete({

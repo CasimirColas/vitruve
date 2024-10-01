@@ -1,6 +1,7 @@
 import { db } from "@/index";
 import { MetricType } from "@prisma/client";
 import { differenceInDays } from "date-fns";
+import { HTTPException } from "hono/http-exception";
 import { z } from "zod";
 
 const getTrendSchema = z.object({
@@ -27,6 +28,10 @@ interface Trend {
  * @returns {Object} The trend of the athlete's metric
  */
 async function getTrend(req: Trend) {
+  const athlete = await db.athlete.findUnique({ where: { id: req.athleteId } });
+  if (!athlete) {
+    throw new HTTPException(404, { message: "Athlete not found" });
+  }
   const metrics = await db.metric.findMany({
     where: {
       athleteId: req.athleteId,

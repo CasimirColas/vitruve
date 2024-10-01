@@ -3,7 +3,7 @@ import { zValidator } from "@hono/zod-validator";
 import {
   getLeaderboard,
   getLeaderboardSchema,
-} from "@/models/metric/queries/getLeaderboard";
+} from "@/models/athlete/queries/getLeaderboard";
 
 const metricsRouter = new Hono();
 

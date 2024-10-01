@@ -1,10 +1,11 @@
 import { db } from "@/index";
 import { Athlete, MetricType } from "@prisma/client";
+import { getLeaderboardRaw } from "@prisma/client/sql";
 import { z } from "zod";
 
 const getLeaderboardSchema = z.object({
   metricType: z.nativeEnum(MetricType),
-  limit: z.number().optional(),
+  limit: z.coerce.number().optional(),
 });
 interface Leaderboard {
   metricType: MetricType;
@@ -17,11 +18,10 @@ interface Leaderboard {
  * @returns {Athlete[]} The leaderboard of athletes
  */
 async function getLeaderboard(req: Leaderboard) {
-  const leaderboard = await db.metric.findMany({
-    where: { metricType: req.metricType },
-    take: req.limit ? req.limit : 10,
-    orderBy: { value: "desc" },
-  });
+  const { metricType, limit } = req;
+  const leaderboard = await db.$queryRawTyped(
+    getLeaderboardRaw(metricType, limit ? limit : 10)
+  );
   return leaderboard;
 }
 
