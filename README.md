@@ -2,13 +2,13 @@
 
 ## Getting Started
 
-Create a .ENV with the 2 requiered environment variables:
-
-- DATABASE_URL: the url for your postgtes database
-- JWT_SECRET: a random string of letters that will be used to encode authentification tokens
+Create a .ENV with the 5 requiered environment variables:
 
 ```
-DATABASE_URL="postgresql://johndoe:randompassword@localhost:5432/mydb?schema=public"
+POSTGRES_USER = "johndoe"
+POSTGRES_PASSWORD = "randompassword"
+POSTGRES_DB = "mydb"
+DATABASE_URL="postgresql://johndoe:randompassword@db:5432/mydb?schema=public"
 JWT_SECRET="your-secret"
 ```
 
@@ -33,6 +33,17 @@ npm run dev
 ```
 
 The server should be running on port 3000
+
+## Docker
+
+When using a docker container run
+
+```
+npx prisma db push
+npx prisma db seed
+```
+
+To create and populate the database for testing
 
 ## Structure
 
