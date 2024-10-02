@@ -75,7 +75,3 @@ The project provides the following endpoints:
   - /athletes/:id
 - DELETE:
   - /athletes/:id
-
-## Shortcommings
-
-Unfortunately, I could not get the image of the server to run in a container...
